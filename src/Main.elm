@@ -61,7 +61,6 @@ type Msg
     | UpdateGuess String
     | ToggleShowFrontFirst
     | ShowDiff
-    | SaveModel
 
 
 port setStorage : Encode.Value -> Cmd msg
@@ -202,21 +201,24 @@ update msg model =
             update ShowDiff { model | sideShowing = flip model.sideShowing }
 
         Next selectedCorrectness ->
-            { model
-                | guess = ""
-                , diff = Nothing
-                , sideShowing = model.showFirst
-                , deck =
-                    model.deck
-                        |> Maybe.map
-                            (Zipper.mapCurrent
-                                (flip model.showFirst
-                                    |> handleNextCard selectedCorrectness
-                                )
-                            )
-                        |> Maybe.andThen Zipper.next
-            }
-                |> update SaveModel
+            let
+                newModel =
+                    { model
+                        | guess = ""
+                        , diff = Nothing
+                        , sideShowing = model.showFirst
+                        , deck =
+                            model.deck
+                                |> Maybe.map
+                                    (Zipper.mapCurrent
+                                        (flip model.showFirst
+                                            |> handleNextCard selectedCorrectness
+                                        )
+                                    )
+                                |> Maybe.andThen Zipper.next
+                    }
+            in
+            ( newModel, saveModel newModel )
 
         UpdateGuess s ->
             let
@@ -233,11 +235,14 @@ update msg model =
                 { model | guess = s }
 
         ToggleShowFrontFirst ->
-            { model
-                | showFirst = flip model.showFirst
-                , sideShowing = flip model.showFirst
-            }
-                |> update SaveModel
+            let
+                newModel =
+                    { model
+                        | showFirst = flip model.showFirst
+                        , sideShowing = flip model.showFirst
+                    }
+            in
+            ( newModel, saveModel newModel )
 
         ShowDiff ->
             ( { model
@@ -254,9 +259,6 @@ update msg model =
               }
             , Cmd.none
             )
-
-        SaveModel ->
-            ( model, saveModel model )
 
 
 saveModel : Model -> Cmd msg
