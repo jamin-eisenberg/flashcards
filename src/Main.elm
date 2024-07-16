@@ -1,4 +1,4 @@
-port module Main exposing (..)
+port module Main exposing (main)
 
 import Browser
 import Diff
@@ -124,11 +124,11 @@ view model =
         nextButton correctness =
             div [ class "col" ]
                 [ button
-                    [ class <| "btn btn-" ++ correctnessTheme correctness ++ " py-4 rounded-0 w-100"
+                    [ class ("btn btn-" ++ correctnessTheme correctness ++ " py-4 rounded-0 w-100")
                     , style "text-align" "center"
-                    , onClick <| Next correctness
+                    , onClick (Next correctness)
                     ]
-                    [ text <| displayCorrectness correctness ]
+                    [ text (displayCorrectness correctness) ]
                 ]
 
         card =
@@ -139,7 +139,7 @@ view model =
                 Just presentCard ->
                     div [ class "card h-100", onClick Flip ]
                         [ div [ class "text-center d-flex align-items-center justify-content-center" ]
-                            [ h5 [ class "card-title" ] [ text <| cardShowing presentCard model.sideShowing ] ]
+                            [ h5 [ class "card-title" ] [ text (cardShowing presentCard model.sideShowing) ] ]
                         ]
     in
     div [ class "container-fluid vh-100 d-flex flex-column" ]
@@ -149,8 +149,7 @@ view model =
             ]
         , div [ class "row m-2" ]
             [ input [ Html.Attributes.value model.guess, onInput UpdateGuess ] [] ]
-        , div [ class "m-2" ] <|
-            viewDiff model.diff
+        , div [ class "m-2" ] (viewDiff model.diff)
         , div [ class "row row-cols-3 m-2 gx-2" ]
             [ nextButton Again
             , nextButton Correct
@@ -161,8 +160,8 @@ view model =
             , input
                 [ id "front-first"
                 , type_ "checkbox"
-                , checked <| sideToShowFrontFirst model.showFirst
-                , onInput <| \_ -> ToggleShowFrontFirst
+                , checked (sideToShowFrontFirst model.showFirst)
+                , onInput (\_ -> ToggleShowFrontFirst)
                 ]
                 []
             ]
@@ -175,13 +174,13 @@ viewDiff diff =
         viewCharDiff d =
             case d of
                 Diff.Added c ->
-                    span [ class "bg-success text-nowrap p-1 font-monospace" ] [ text <| String.fromChar c ]
+                    span [ class "bg-success text-nowrap p-1 font-monospace" ] [ text (String.fromChar c) ]
 
                 Diff.Removed c ->
-                    span [ class "bg-danger text-nowrap p-1 font-monospace" ] [ text <| String.fromChar c ]
+                    span [ class "bg-danger text-nowrap p-1 font-monospace" ] [ text (String.fromChar c) ]
 
                 Diff.NoChange c ->
-                    span [ class "text-nowrap p-1 font-monospace" ] [ text <| String.fromChar c ]
+                    span [ class "text-nowrap p-1 font-monospace" ] [ text (String.fromChar c) ]
     in
     case diff of
         Nothing ->
@@ -281,16 +280,6 @@ saveModel model =
         |> toSavedModel
         |> encode
         |> setStorage
-
-
-handleNextCard : Int -> Correctness -> Side -> Card -> Card
-handleNextCard sessionNumber correctness side card =
-    case side of
-        Front ->
-            { card | front = handleNextCardSide sessionNumber correctness card.front }
-
-        Back ->
-            { card | back = handleNextCardSide sessionNumber correctness card.back }
 
 
 handleNextCardSide : Int -> Correctness -> CardSide -> CardSide
@@ -453,7 +442,7 @@ toSavedModel model =
 encode : SavedModel -> Encode.Value
 encode model =
     Encode.object
-        [ ( "showFrontFirst", Encode.bool <| sideToShowFrontFirst model.showFirst )
+        [ ( "showFrontFirst", Encode.bool (sideToShowFrontFirst model.showFirst) )
         , ( "sessionNumber", Encode.int model.sessionNumber )
         , ( "allCards", Encode.list encodeCard model.allCards )
         ]
@@ -491,23 +480,23 @@ encodeStatus status =
 decoder : Decode.Decoder SavedModel
 decoder =
     Decode.map3 SavedModel
-        (Decode.field "allCards" <| Decode.list decodeCard)
-        (Decode.field "showFrontFirst" <| Decode.map showFrontFirstToSide Decode.bool)
+        (Decode.field "allCards" (Decode.list decodeCard))
+        (Decode.field "showFrontFirst" (Decode.map showFrontFirstToSide Decode.bool))
         (Decode.field "sessionNumber" Decode.int)
 
 
 decodeCard : Decode.Decoder Card
 decodeCard =
     Decode.map2 Card
-        (Decode.field "front" <| decodeCardSide)
-        (Decode.field "back" <| decodeCardSide)
+        (Decode.field "front" decodeCardSide)
+        (Decode.field "back" decodeCardSide)
 
 
 decodeCardSide : Decode.Decoder CardSide
 decodeCardSide =
     Decode.map2 CardSide
-        (Decode.field "content" <| Decode.string)
-        (Decode.field "status" <| decodeStatus)
+        (Decode.field "content" Decode.string)
+        (Decode.field "status" decodeStatus)
 
 
 decodeStatus : Decode.Decoder CardStatus
